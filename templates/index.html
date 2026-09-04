@@ -17,23 +17,8 @@
                 <p class="eyebrow">Gerador de documento acadêmico</p>
                 <h1>Conversor ABNT</h1>
             </div>
-            <button type="button" class="support-button" id="abrir-apoio" aria-haspopup="dialog" aria-controls="modal-apoio">
-                <span aria-hidden="true">♥</span> Apoie o projeto
-            </button>
         </header>
 
-        <dialog class="support-modal" id="modal-apoio" aria-labelledby="modal-apoio-titulo">
-            <div class="support-modal-content">
-                <button type="button" class="modal-close" id="fechar-apoio" aria-label="Fechar janela de apoio">×</button>
-                <p class="eyebrow">Obrigado por apoiar</p>
-                <h2 id="modal-apoio-titulo">Apoie o Conversor ABNT</h2>
-                <p>Se o projeto foi útil para você, considere fazer uma contribuição pelo LivePix. Seu apoio ajuda a manter e melhorar o site.</p>
-                <div class="support-widget-frame">
-                    <iframe src="https://widget.livepix.gg/embed/6344ab3f-fec6-43f4-95b7-3de057919dcd" title="QR Code para apoiar o Conversor ABNT pelo LivePix" loading="lazy"></iframe>
-                </div>
-                <a class="support-link" href="https://livepix.gg/conversorabnt" target="_blank" rel="noopener noreferrer">Apoiar pelo LivePix</a>
-            </div>
-        </dialog>
 
         {% with mensagens = get_flashed_messages(with_categories=true) %}
             {% if mensagens %}
