@@ -71,6 +71,7 @@ def _coletar_dados_formulario(pasta_temporaria: Path) -> dict[str, object]:
         "professor": _obter_texto("professor"),
         "cidade": _obter_texto("cidade"),
         "ano": _obter_texto("ano"),
+        "fonte": _obter_texto("fonte") or "Arial",
         "titulo": _obter_texto("titulo"),
         "subtitulo": _obter_texto("subtitulo"),
         "tipo_trabalho": _obter_texto("tipo_trabalho"),
@@ -158,6 +159,9 @@ def _obter_secoes_por_campos_numerados(pasta_temporaria: Path) -> list[dict[str,
                 "titulo": t.strip(),
                 "nivel": int(n) if n.isdigit() else 1,
                 "conteudo": c.strip(),
+                "alinhamento_texto": request.form.getlist("secao_alinhamento_texto")[indice - 1] if len(request.form.getlist("secao_alinhamento_texto")) >= indice else "justify",
+                "espacamento_linhas": request.form.getlist("secao_espacamento_linhas")[indice - 1] if len(request.form.getlist("secao_espacamento_linhas")) >= indice else "1.5",
+                "recuo_primeira_linha": request.form.getlist("secao_recuo_primeira_linha")[indice - 1] if len(request.form.getlist("secao_recuo_primeira_linha")) >= indice else "12.5",
                 "imagens": _obter_imagens_da_secao(indice, pasta_temporaria),
             })
     return secoes
@@ -187,7 +191,7 @@ def _obter_imagens_da_secao(indice: int, pasta_temporaria: Path) -> list[dict[st
         })
     return imagens
 
-#
+
 def _criar_caminho_saida(titulo: str) -> Path:
     app.config["OUTPUT_DIR"].mkdir(parents=True, exist_ok=True)
     nome_base = _normalizar_nome_arquivo(titulo) or "trabalho_abnt"
