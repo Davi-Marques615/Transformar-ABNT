@@ -30,7 +30,10 @@ class ABNTDocumentGenerator:
     def __init__(self, dados: dict[str, Any], caminho_saida: str | Path) -> None:
         self.dados = dados
         self.caminho_saida = Path(caminho_saida)
-        self.config = ABNTConfig()
+        fonte = str(self.dados.get("fonte", "Arial")).strip()
+        if fonte not in {"Arial", "Times New Roman"}:
+            fonte = "Arial"
+        self.config = ABNTConfig(font_family=fonte)
         self.documento = Document()
         self.paginas_pre_textuais_contadas = 0
         self.contadores_secao = [0] * 6
@@ -224,7 +227,7 @@ class ABNTDocumentGenerator:
             nivel = secao.get("nivel", 1)
             numero_formatado = self._gerar_numero_secao(nivel)
             self._adicionar_titulo_numerado(numero_formatado, secao["titulo"], nivel=nivel)
-            self._adicionar_conteudo_textual(secao.get("conteudo", ""))
+            self._adicionar_conteudo_textual(secao.get("conteudo", ""), secao)
             self._adicionar_imagens_da_secao(secao.get("imagens", []), numero_formatado)
 
     def _gerar_numero_secao(self, nivel: int) -> str:
@@ -255,12 +258,23 @@ class ABNTDocumentGenerator:
             secoes.append({"titulo": "INTRODUÇÃO", "conteudo": texto_completo, "nivel": 1})
         return secoes or [{"titulo": "INTRODUÇÃO", "conteudo": "", "nivel": 1}]
 
-    def _adicionar_conteudo_textual(self, conteudo: str) -> None:
+    def _adicionar_conteudo_textual(self, conteudo: str, configuracao: dict[str, Any] | None = None) -> None:
+        configuracao = configuracao or {}
+        alinhamentos = {"left": WD_ALIGN_PARAGRAPH.LEFT, "right": WD_ALIGN_PARAGRAPH.RIGHT, "center": WD_ALIGN_PARAGRAPH.CENTER, "justify": WD_ALIGN_PARAGRAPH.JUSTIFY}
+        alinhamento = alinhamentos.get(str(configuracao.get("alinhamento_texto", "justify")), WD_ALIGN_PARAGRAPH.JUSTIFY)
+        try:
+            espacamento = max(1.0, min(float(configuracao.get("espacamento_linhas", 1.5)), 3.0))
+        except (TypeError, ValueError):
+            espacamento = 1.5
+        try:
+            recuo_mm = max(0.0, min(float(configuracao.get("recuo_primeira_linha", 12.5)), 40.0))
+        except (TypeError, ValueError):
+            recuo_mm = 12.5
         for bloco in self._separar_paragrafos(conteudo):
             if bloco.startswith(">>>"):
                 self._adicionar_citacao_longa(bloco.removeprefix(">>>").strip())
             else:
-                self._adicionar_paragrafo(bloco, alinhamento=WD_ALIGN_PARAGRAPH.JUSTIFY)
+                self._adicionar_paragrafo(bloco, alinhamento=alinhamento, recuo=recuo_mm > 0, recuo_mm=recuo_mm, espacamento_linhas=espacamento)
 
     def _adicionar_imagens_da_secao(self, imagens: Any, numero_secao: str) -> None:
         if not isinstance(imagens, list):
@@ -354,13 +368,15 @@ class ABNTDocumentGenerator:
         negrito: bool = False,
         tamanho: int | None = None,
         recuo: bool = True,
+        recuo_mm: float | None = None,
+        espacamento_linhas: float = 1.5,
     ) -> Any:
         paragrafo = self.documento.add_paragraph()
         paragrafo.alignment = alinhamento
-        paragrafo.paragraph_format.line_spacing = 1.5
+        paragrafo.paragraph_format.line_spacing = espacamento_linhas
         paragrafo.paragraph_format.space_before = Pt(0)
         paragrafo.paragraph_format.space_after = Pt(0)
-        paragrafo.paragraph_format.first_line_indent = Mm(self.config.paragraph_first_line_indent_mm) if recuo else None
+        paragrafo.paragraph_format.first_line_indent = Mm(recuo_mm if recuo_mm is not None else self.config.paragraph_first_line_indent_mm) if recuo else None
         run = paragrafo.add_run(texto)
         self._formatar_run(run, negrito=negrito, tamanho=tamanho)
         return paragrafo
