@@ -9,9 +9,6 @@
     const anoInput = document.getElementById("ano");
     const submitButton = form ? form.querySelector('button[type="submit"]') : null;
     const STORAGE_KEY = "convertor_abnt_rascunho_v2";
-    const modalApoio = document.getElementById("modal-apoio");
-    const abrirApoioButton = document.getElementById("abrir-apoio");
-    const fecharApoioButton = document.getElementById("fechar-apoio");
 
     if (!form) {
         return;
@@ -25,14 +22,6 @@
     form.addEventListener("reset", restaurarFormulario);
     form.addEventListener("input", salvarRascunho);
     form.addEventListener("change", salvarRascunho);
-    abrirApoioButton?.addEventListener("click", abrirModalApoio);
-    fecharApoioButton?.addEventListener("click", fecharModalApoio);
-    modalApoio?.addEventListener("click", function (event) {
-        if (event.target === modalApoio) fecharModalApoio();
-    });
-    modalApoio?.addEventListener("cancel", function () {
-        fecharModalApoio();
-    });
     restaurarRascunho();
 
     // Adicionar autor
@@ -317,7 +306,6 @@
             return;
         }
 
-        abrirModalApoio();
         if (submitButton) {
             submitButton.disabled = true;
             submitButton.textContent = "Gerando DOCX...";
@@ -325,24 +313,6 @@
                 submitButton.disabled = false;
                 submitButton.textContent = "Gerar DOCX";
             }, 2500);
-        }
-    }
-
-    function abrirModalApoio() {
-        if (!modalApoio) return;
-        if (typeof modalApoio.showModal === "function" && !modalApoio.open) {
-            modalApoio.showModal();
-        } else {
-            modalApoio.setAttribute("open", "open");
-        }
-    }
-
-    function fecharModalApoio() {
-        if (!modalApoio) return;
-        if (typeof modalApoio.close === "function" && modalApoio.open) {
-            modalApoio.close();
-        } else {
-            modalApoio.removeAttribute("open");
         }
     }
 
