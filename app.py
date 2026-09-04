@@ -187,7 +187,7 @@ def _obter_imagens_da_secao(indice: int, pasta_temporaria: Path) -> list[dict[st
         })
     return imagens
 
-
+#
 def _criar_caminho_saida(titulo: str) -> Path:
     app.config["OUTPUT_DIR"].mkdir(parents=True, exist_ok=True)
     nome_base = _normalizar_nome_arquivo(titulo) or "trabalho_abnt"
