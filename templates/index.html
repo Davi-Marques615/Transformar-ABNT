@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9939696292954624"
+     crossorigin="anonymous"></script>
+
+    <title>Conversor ABNT</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='saas.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+</head>
+<body>
+    <main class="app-shell">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">Gerador de documento acadêmico</p>
+                <h1>Conversor ABNT</h1>
+            </div>
+            <nav class="top-nav">
+                <a href="{{ url_for('plans') }}">Planos</a>
+                {% if current_user %}
+                    <a href="{{ url_for('account') }}">Minha conta</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Entrar</a>
+                    <a href="{{ url_for('register') }}">Criar conta</a>
+                {% endif %}
+            </nav>
+        </header>
+
+
+        {% with mensagens = get_flashed_messages(with_categories=true) %}
+            {% if mensagens %}
+                <section class="alerts" aria-live="polite">
+                    {% for categoria, mensagem in mensagens %}
+                        <p class="alert alert-{{ categoria }}">{{ mensagem }}</p>
+                    {% endfor %}
+                </section>
+            {% endif %}
+        {% endwith %}
+
+        <form class="abnt-form" action="{{ url_for('gerar_documento') }}" method="post" enctype="multipart/form-data" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <p class="required-note">Campos marcados como obrigatórios precisam ser preenchidos para gerar o DOCX.</p>
+            <section class="form-section" aria-labelledby="dados-gerais-title">
+                <h2 id="dados-gerais-title">Dados gerais</h2>
+
+                <div class="field-grid">
+                    <label class="field field-full" for="instituicao">
+                        <span>Instituição</span>
+                        <input type="text" id="instituicao" name="instituicao" required>
+                    </label>
+
+                    <label class="field" for="curso_disciplina">
+                        <span>Curso ou disciplina</span>
+                        <input type="text" id="curso_disciplina" name="curso_disciplina">
+                    </label>
+
+                    <label class="field" for="professor">
+                        <span>Professor(a)</span>
+                        <input type="text" id="professor" name="professor" required>
+                    </label>
+
+                    <label class="field" for="cidade">
+                        <span>Cidade</span>
+                        <input type="text" id="cidade" name="cidade" required>
+                    </label>
+
+                    <label class="field" for="ano">
+                        <span>Ano</span>
+                        <input type="text" id="ano" name="ano" inputmode="numeric" maxlength="4" required>
+                    </label>
+
+                    <label class="field" for="fonte">
+                        <span>Fonte do documento</span>
+                        <select id="fonte" name="fonte">
+                            <option value="Arial">Arial</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                        </select>
+                    </label>
+                </div>
+            </section>
+
+            <section class="form-section" aria-labelledby="autores-title">
+                <div class="section-heading-row">
+                    <h2 id="autores-title">Autores</h2>
+                    <button type="button" class="secondary-button" id="adicionar-autor">Adicionar autor</button>
+                </div>
+
+                <div id="autores-container" class="dynamic-list">
+                    <label class="field" for="autor_1">
+                        <span>Autor 1</span>
+                        <input type="text" id="autor_1" name="autor_1" required>
+                    </label>
+                </div>
+            </section>
+
+            <section class="form-section" aria-labelledby="identificacao-title">
+                <h2 id="identificacao-title">Identificação do trabalho</h2>
+
+                <div class="field-grid">
+                    <label class="field field-full" for="titulo">
+                        <span class="label-with-help">
+                            Título
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre título" data-tooltip="Informe o título principal do trabalho. Ele aparecerá em destaque na capa e na folha de rosto.">?</button>
+                        </span>
+                        <input type="text" id="titulo" name="titulo" required>
+                    </label>
+
+                    <label class="field field-full" for="subtitulo">
+                        <span class="label-with-help">
+                            Subtítulo
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre subtítulo" data-tooltip="Use apenas se o trabalho tiver uma explicação complementar ao título principal. Pode ficar em branco.">?</button>
+                        </span>
+                        <input type="text" id="subtitulo" name="subtitulo">
+                    </label>
+
+                    <label class="field" for="tipo_trabalho">
+                        <span class="label-with-help">
+                            Tipo de trabalho
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre tipo de trabalho" data-tooltip="Escolha a categoria mais próxima do documento, como TCC, monografia, dissertação ou trabalho acadêmico.">?</button>
+                        </span>
+                        <select id="tipo_trabalho" name="tipo_trabalho">
+                            <option value="">Trabalho acadêmico</option>
+                            <option value="projeto">Projeto de pesquisa</option>
+                            <option value="tcc">TCC</option>
+                            <option value="monografia">Monografia</option>
+                            <option value="dissertacao">Dissertação</option>
+                            <option value="tese">Tese</option>
+                        </select>
+                    </label>
+
+                    <label class="field" for="folha_aprovacao">
+                        <span class="label-with-help">
+                            Folha de aprovação
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre folha de aprovação" data-tooltip="Defina se o documento deve incluir uma folha para aprovação e banca examinadora. No automático, ela entra quando houver professor ou banca.">?</button>
+                        </span>
+                        <select id="folha_aprovacao" name="folha_aprovacao">
+                            <option value="">Automático</option>
+                            <option value="sim">Incluir</option>
+                            <option value="nao">Não incluir</option>
+                        </select>
+                    </label>
+
+                    <label class="field field-full" for="natureza_trabalho">
+                        <span class="label-with-help">
+                            Natureza do trabalho
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre natureza do trabalho" data-tooltip="Explique a finalidade do trabalho, a instituição e o requisito. Se ficar em branco, o sistema cria um texto padrão.">?</button>
+                        </span>
+                        <textarea id="natureza_trabalho" name="natureza_trabalho" rows="4"></textarea>
+                    </label>
+                </div>
+            </section>
+
+            <section class="form-section optional-group" aria-labelledby="pre-textuais-title">
+                <h2 id="pre-textuais-title">Elementos pré-textuais</h2>
+
+                <div class="field-grid">
+                    <label class="field field-full" for="texto_aprovacao">
+                        <span class="label-with-help">
+                            Texto da aprovação
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre texto da aprovação" data-tooltip="Texto que aparece na folha de aprovação. Use se quiser substituir o texto padrão do sistema.">?</button>
+                        </span>
+                        <textarea id="texto_aprovacao" name="texto_aprovacao" rows="4"></textarea>
+                    </label>
+
+                    <label class="field field-full" for="banca_examinadora">
+                        <span class="label-with-help">
+                            Banca examinadora
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre banca examinadora" data-tooltip="Informe um nome por linha ou separe por ponto e vírgula. Esses nomes aparecem nas linhas de assinatura.">?</button>
+                        </span>
+                        <textarea id="banca_examinadora" name="banca_examinadora" rows="4"></textarea>
+                    </label>
+
+                    <label class="field field-full" for="dedicatoria">
+                        <span class="label-with-help">
+                            Dedicatória
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre dedicatória" data-tooltip="Texto opcional de dedicatória. Se preenchido, o sistema cria uma página própria para ele.">?</button>
+                        </span>
+                        <textarea id="dedicatoria" name="dedicatoria" rows="4"></textarea>
+                    </label>
+
+                    <label class="field field-full" for="agradecimentos">
+                        <span class="label-with-help">
+                            Agradecimentos
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre agradecimentos" data-tooltip="Texto opcional para agradecer pessoas, instituições ou apoios importantes.">?</button>
+                        </span>
+                        <textarea id="agradecimentos" name="agradecimentos" rows="4"></textarea>
+                    </label>
+
+                    <label class="field field-full" for="epigrafe">
+                        <span class="label-with-help">
+                            Epígrafe
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre epígrafe" data-tooltip="Citação curta opcional usada antes do texto principal. Se preencher, inclua a autoria quando fizer sentido.">?</button>
+                        </span>
+                        <textarea id="epigrafe" name="epigrafe" rows="4"></textarea>
+                    </label>
+                </div>
+            </section>
+
+            <section class="form-section" aria-labelledby="resumos-title">
+                <h2 id="resumos-title">Resumos</h2>
+
+                <div class="field-grid">
+                    <label class="field field-full" for="resumo">
+                        <span class="label-with-help">
+                            Resumo
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre resumo" data-tooltip="Escreva um resumo breve do objetivo, método e conclusão do trabalho. Pode ficar em branco se não quiser incluir resumo.">?</button>
+                        </span>
+                        <textarea id="resumo" name="resumo" rows="6"></textarea>
+                    </label>
+
+                    <label class="field field-full" for="palavras_chave">
+                        <span class="label-with-help">
+                            Palavras-chave
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre palavras-chave" data-tooltip="Liste os termos principais do trabalho. Separe por ponto e vírgula ou escreva um por linha.">?</button>
+                        </span>
+                        <input type="text" id="palavras_chave" name="palavras_chave">
+                    </label>
+
+                    <label class="field field-full" for="abstract">
+                        <span class="label-with-help">
+                            Abstract
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre abstract" data-tooltip="Versão em inglês do resumo. Se preencher, o sistema cria uma página de abstract.">?</button>
+                        </span>
+                        <textarea id="abstract" name="abstract" rows="6"></textarea>
+                    </label>
+
+                    <label class="field field-full" for="keywords">
+                        <span class="label-with-help">
+                            Keywords
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre keywords" data-tooltip="Palavras-chave em inglês. Separe por ponto e vírgula ou escreva uma por linha.">?</button>
+                        </span>
+                        <input type="text" id="keywords" name="keywords">
+                    </label>
+                </div>
+            </section>
+
+            <section class="form-section" aria-labelledby="secoes-title">
+                <div class="section-heading-row">
+                    <div class="heading-with-help">
+                        <h2 id="secoes-title">Seções do trabalho</h2>
+                        <button type="button" class="tooltip-button" aria-label="Ajuda sobre seções" data-tooltip="Crie uma seção para cada parte do trabalho. Se houver apenas um texto, use uma única seção.">?</button>
+                    </div>
+                </div>
+
+                <div id="secoes-container" class="dynamic-list sections-list">
+                    <fieldset class="work-section" data-section-index="1">
+                        <legend>Seção 1</legend>
+
+                        <div class="field-grid">
+                            <label class="field field-full" for="secao_titulo_1">
+                                <span class="label-with-help">
+                                    Título da seção
+                                    <button type="button" class="tooltip-button" aria-label="Ajuda sobre título da seção" data-tooltip="Nome da parte do trabalho, como Introdução, Desenvolvimento, Metodologia ou Considerações finais.">?</button>
+                                </span>
+                                <input type="text" id="secao_titulo_1" name="secao_titulo" required>
+                            </label>
+
+                            <label class="field" for="secao_nivel_1">
+                                <span class="label-with-help">
+                                    Nível da seção
+                                    <button type="button" class="tooltip-button" aria-label="Ajuda sobre nível da seção" data-tooltip="Use seção principal para capítulos como 1, 2 e 3. Use subseções para itens como 1.1, 1.1.1 e seguintes.">?</button>
+                                </span>
+                                <select id="secao_nivel_1" name="secao_nivel">
+                                    <option value="1">Seção principal</option>
+                                    <option value="2">Subseção</option>
+                                    <option value="3">Subseção terciária</option>
+                                    <option value="4">Subseção quaternária</option>
+                                    <option value="5">Subseção quinária</option>
+                                </select>
+                            </label>
+
+                            <label class="field field-full" for="secao_conteudo_1">
+                                <span class="label-with-help">
+                                    Texto da seção
+                                    <button type="button" class="tooltip-button" aria-label="Ajuda sobre texto da seção" data-tooltip="Conteúdo dessa parte do trabalho. Pode ficar em branco se você quiser criar apenas o título da seção.">?</button>
+                                </span>
+                                <textarea id="secao_conteudo_1" name="secao_conteudo" rows="10"></textarea>
+                            </label>
+
+
+                            <div class="field field-full image-settings-group">
+                                <div class="image-settings-heading">
+                                    <span>Imagem da seção (opcional)</span>
+                                    <small>Configurações ABNT: posição, largura, título/legenda e fonte.</small>
+                                </div>
+                                <div class="section-images-grid">
+                                    <div class="image-slot">
+                                        <strong>Imagem 1</strong>
+                                        <input type="file" id="secao_imagem_1_1" name="secao_imagem_1_1" accept=".png,.jpg,.jpeg,.gif,.bmp,.tif,.tiff">
+                                        <div class="image-options">
+                                            <label class="field"><span>Posição</span><select name="secao_imagem_1_1_alinhamento"><option value="center">Centralizada</option><option value="left">À esquerda</option><option value="right">À direita</option></select></label>
+                                            <label class="field"><span>Largura (mm)</span><input type="number" name="secao_imagem_1_1_largura" min="20" max="170" value="100"></label>
+                                            <label class="field"><span>Título/legenda</span><input type="text" name="secao_imagem_1_1_titulo" placeholder="Ex.: Figura 1 – ..."></label>
+                                            <label class="field"><span>Fonte</span><input type="text" name="secao_imagem_1_1_fonte" placeholder="Ex.: Elaborado pelo autor (2026)"></label>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="field field-full work-section-actions">
+                                <button type="button" class="secondary-button duplicate-section" aria-label="Duplicar seção 1">Duplicar seção</button>
+                                <button type="button" class="secondary-button remove-section" aria-label="Remover seção 1">Remover seção</button>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <div class="section-actions">
+                    <button type="button" class="secondary-button" id="adicionar-secao">Adicionar seção</button>
+                </div>
+            </section>
+            <section class="form-section" aria-labelledby="pos-textuais-title">
+                <h2 id="pos-textuais-title">Elementos pós-textuais</h2>
+
+                <div class="field-grid">
+                    <label class="field field-full" for="referencias">
+                        <span class="label-with-help">
+                            Referências
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre referências" data-tooltip="Informe as referências usadas no trabalho. Escreva uma por linha ou separe por ponto e vírgula.">?</button>
+                        </span>
+                        <textarea id="referencias" name="referencias" rows="8"></textarea>
+                    </label>
+
+                    <label class="field field-full" for="glossario">
+                        <span class="label-with-help">
+                            Glossário
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre glossário" data-tooltip="Lista opcional de termos e significados usados no trabalho.">?</button>
+                        </span>
+                        <textarea id="glossario" name="glossario" rows="5"></textarea>
+                    </label>
+
+                    <label class="field field-full" for="apendice">
+                        <span class="label-with-help">
+                            Apêndice
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre apêndice" data-tooltip="Material complementar produzido por quem escreveu o trabalho, como questionários, roteiros ou tabelas.">?</button>
+                        </span>
+                        <textarea id="apendice" name="apendice" rows="5"></textarea>
+                    </label>
+
+                    <label class="field field-full" for="anexo">
+                        <span class="label-with-help">
+                            Anexo
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre anexo" data-tooltip="Material complementar de outra fonte, como leis, documentos, imagens ou textos externos.">?</button>
+                        </span>
+                        <textarea id="anexo" name="anexo" rows="5"></textarea>
+                    </label>
+
+                    <label class="field field-full" for="indice">
+                        <span class="label-with-help">
+                            Índice
+                            <button type="button" class="tooltip-button" aria-label="Ajuda sobre índice" data-tooltip="Lista opcional de termos importantes e onde aparecem. Use somente se o trabalho realmente precisar disso.">?</button>
+                        </span>
+                        <textarea id="indice" name="indice" rows="5"></textarea>
+                    </label>
+                </div>
+            </section>
+
+            <footer class="form-actions">
+                <button type="reset" class="secondary-button">Limpar</button>
+                <button type="submit" class="primary-button">Gerar DOCX</button>
+            </footer>
+        </form>
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</body>
+</html>

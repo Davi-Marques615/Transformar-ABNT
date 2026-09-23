@@ -1,0 +1,23 @@
+CONVERSOR ABNT — EXECUÇÃO LOCAL
+
+1. Abra esta pasta no PowerShell.
+2. Crie e ative um ambiente virtual:
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+3. Instale as dependências:
+   pip install -r requirements.txt
+4. Copie .env.example para .env e defina pelo menos uma SECRET_KEY longa.
+5. Para testar apenas a geração local sem pagamentos, defina temporariamente:
+   ALLOW_UNPAID_GENERATION=1
+6. Inicie:
+   python app.py
+7. Abra http://127.0.0.1:5000
+
+PRODUÇÃO
+
+Use Gunicorn ou o comando de inicialização do provedor:
+   gunicorn --bind 0.0.0.0:$PORT app:app
+
+Em produção, mantenha FLASK_DEBUG=0, COOKIE_SECURE=1 e ALLOW_UNPAID_GENERATION=0.
+Nunca publique .env, SECRET_KEY ou chaves Stripe no Git.
+O DOCX é criado em diretório temporário, enviado ao navegador e descartado; o banco guarda somente conta, assinatura e consumo mensal.
